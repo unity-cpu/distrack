@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Unitys MOTD Maker</title>
+<title>Unity's MOTD Maker</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎨</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -14,7 +14,7 @@
 <div class="app">
 
   <header class="topbar">
-    <h1 class="logo"><span class="logo-cyan">ORXIFY'S</span> <span class="logo-blue">MOTD MAKER</span></h1>
+    <h1 class="logo"><span class="logo-cyan">UNITY'S</span> <span class="logo-blue">MOTD MAKER</span></h1>
     <p class="tagline">FUSION TAG · LIVE PREVIEW · GRADIENT · CREDITS · JSON</p>
   </header>
 
@@ -103,41 +103,67 @@
 
     <!-- GRADIENT -->
     <section class="panel" id="panel-gradient">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-head"><span class="card-title">ADVANCED GRADIENT BUILDER</span></div>
+
+          <label class="field-label">Text to gradientify</label>
+          <input type="text" id="gradText" class="text-input" value="WELCOME TO FUSION TAG" placeholder="Text to gradient...">
+
+          <div class="grad-inputs">
+            <div class="grad-col">
+              <label>Start color</label>
+              <div class="color-row">
+                <input type="color" id="gFromSwatch" value="#ffe066">
+                <input type="text" id="gFromHex" value="#ffe066" maxlength="7">
+              </div>
+            </div>
+            <div class="grad-col">
+              <label>End color</label>
+              <div class="color-row">
+                <input type="color" id="gToSwatch" value="#ff8c00">
+                <input type="text" id="gToHex" value="#ff8c00" maxlength="7">
+              </div>
+            </div>
+          </div>
+
+          <label class="field-label">Gradient bar</label>
+          <div class="gradient-bar" id="gradientBar"></div>
+
+          <label class="field-label">Mode</label>
+          <select id="gStyle" class="text-input">
+            <option value="linear">Left &rarr; Right</option>
+            <option value="reverse">Right &rarr; Left</option>
+            <option value="bounce">Bounce (out and back)</option>
+          </select>
+
+          <div class="preview-box" id="gradPreview"></div>
+
+          <div class="btn-row">
+            <button class="btn" id="gradCopyBtn">Copy Tags</button>
+            <button class="btn btn-accent" id="gradInsertBtn">Send to Editor</button>
+          </div>
+          <textarea id="gradOutput" class="motd-textarea small" readonly spellcheck="false" style="margin-top:12px;"></textarea>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><span class="card-title">PRESET GRADIENTS</span></div>
+          <div class="preset-list" id="presetList"></div>
+        </div>
+      </div>
+
       <div class="card">
-        <div class="card-head"><span class="card-title">GRADIENT TAG GENERATOR</span></div>
-        <div class="grad-inputs">
-          <div class="grad-col">
-            <label>From</label>
-            <div class="color-row">
-              <input type="color" id="gFromSwatch" value="#22d3ee">
-              <input type="text" id="gFromHex" value="#22d3ee" maxlength="7">
-            </div>
-          </div>
-          <div class="grad-col">
-            <label>To</label>
-            <div class="color-row">
-              <input type="color" id="gToSwatch" value="#a855f7">
-              <input type="text" id="gToHex" value="#a855f7" maxlength="7">
-            </div>
-          </div>
-          <div class="grad-col">
-            <label>Style</label>
-            <select id="gStyle" class="text-input">
-              <option value="linear">Linear</option>
-              <option value="bounce">Bounce (out and back)</option>
-              <option value="reverse">Reverse</option>
-            </select>
-          </div>
+        <div class="card-head">
+          <span class="card-title">PER-WORD GRADIENT</span>
+          <span class="pill">EACH WORD GETS ITS OWN GRADIENT PAIR</span>
         </div>
-        <input type="text" id="gradText" class="text-input" value="FUSION TAG" placeholder="Text to gradient...">
-        <div class="card-head" style="margin-top:14px;"><span class="card-title accent">PREVIEW</span></div>
-        <div class="preview-box" id="gradPreview"></div>
-        <div class="card-head" style="margin-top:14px;"><span class="card-title">GENERATED TAGS</span></div>
-        <textarea id="gradOutput" class="motd-textarea small" readonly spellcheck="false"></textarea>
-        <div class="btn-row">
-          <button class="btn btn-primary" id="gradInsertBtn">Insert Into Editor</button>
-          <button class="btn" id="gradCopyBtn">Copy Tags</button>
+        <div class="btn-row" style="margin-top:0;margin-bottom:12px;">
+          <button class="btn" id="addWordBtn">+ Add Word</button>
+          <button class="btn" id="perWordCopyBtn">Copy All</button>
+          <button class="btn btn-accent" id="perWordInsertBtn">Send to Editor</button>
         </div>
+        <div class="perword-list" id="perWordList"></div>
+        <div class="preview-box" id="perWordPreview" style="margin-top:12px;"></div>
       </div>
     </section>
 
@@ -239,7 +265,7 @@
   </main>
 
   <footer class="foot">
-    <span>unitys motd maker</span>
+    <span>orxify's motd maker</span>
     <span class="dot">·</span>
     <span>built for gorilla tag status / room MOTD strings</span>
   </footer>
