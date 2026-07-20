@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orxify's MOTD Maker</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎨</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="app">
+
+  <header class="topbar">
+    <h1 class="logo"><span class="logo-cyan">ORXIFY'S</span> <span class="logo-blue">MOTD MAKER</span></h1>
+    <p class="tagline">FUSION TAG · LIVE PREVIEW · GRADIENT · CREDITS · JSON</p>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-tab="editor">Editor</button>
+    <button class="tab" data-tab="gradient">Gradient</button>
+    <button class="tab" data-tab="credits">Credits</button>
+    <button class="tab" data-tab="json">JSON Editor</button>
+    <button class="tab" data-tab="multiline">Multi-line</button>
+    <button class="tab" data-tab="history">History</button>
+    <button class="tab" data-tab="settings">Settings</button>
+  </nav>
+
+  <main class="panels">
+
+    <!-- EDITOR -->
+    <section class="panel active" id="panel-editor">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">MOTD INPUT</span>
+            <div class="card-head-right">
+              <span class="pill" id="charCount">0 CHARS</span>
+              <span class="pill" id="emptyState">EMPTY</span>
+            </div>
+          </div>
+          <textarea id="motdInput" class="motd-textarea" placeholder="<color=#FF0000>Red text</color> here..." spellcheck="false"></textarea>
+          <div class="btn-row">
+            <button class="btn btn-primary" id="saveBtn">Save</button>
+            <button class="btn" id="copyBtn">Copy</button>
+            <button class="btn" id="clearBtn">Clear</button>
+            <button class="btn btn-accent" id="wrapAllBtn">Wrap All</button>
+          </div>
+        </div>
+
+        <div class="col-stack">
+          <div class="card">
+            <div class="card-head"><span class="card-title accent">LIVE PREVIEW</span></div>
+            <div class="preview-box" id="livePreview">Start typing...</div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><span class="card-title">QUICK GRADIENT INSERT</span></div>
+            <div class="grad-inputs">
+              <div class="grad-col">
+                <label>From</label>
+                <div class="color-row">
+                  <input type="color" id="gradFromSwatch" value="#00ffff">
+                  <input type="text" id="gradFromHex" value="#00ffff" maxlength="7">
+                </div>
+              </div>
+              <div class="grad-col">
+                <label>To</label>
+                <div class="color-row">
+                  <input type="color" id="gradToSwatch" value="#0040ff">
+                  <input type="text" id="gradToHex" value="#0040ff" maxlength="7">
+                </div>
+              </div>
+            </div>
+            <input type="text" id="gradQuickText" class="text-input" value="FUSION TAG" placeholder="Text to gradient...">
+            <div class="preview-box small" id="gradQuickPreview"></div>
+            <div class="btn-row">
+              <button class="btn btn-primary" id="gradQuickInsert">Insert Into Editor</button>
+              <button class="btn" id="gradQuickCopy">Copy Tags</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><span class="card-title">QUICK COLORS — CLICK TO INSERT AT CURSOR</span></div>
+        <div class="swatch-row" id="quickColors"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><span class="card-title">INSERT TEMPLATES</span></div>
+        <div class="template-row" id="templateRow">
+          <button class="btn" data-template="newline">Newline</button>
+          <button class="btn" data-template="boldwrap">Bold Wrap</button>
+          <button class="btn" data-template="welcome">Welcome To</button>
+          <button class="btn" data-template="update">Update:</button>
+          <button class="btn" data-template="discord">Discord Link</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- GRADIENT -->
+    <section class="panel" id="panel-gradient">
+      <div class="card">
+        <div class="card-head"><span class="card-title">GRADIENT TAG GENERATOR</span></div>
+        <div class="grad-inputs">
+          <div class="grad-col">
+            <label>From</label>
+            <div class="color-row">
+              <input type="color" id="gFromSwatch" value="#22d3ee">
+              <input type="text" id="gFromHex" value="#22d3ee" maxlength="7">
+            </div>
+          </div>
+          <div class="grad-col">
+            <label>To</label>
+            <div class="color-row">
+              <input type="color" id="gToSwatch" value="#a855f7">
+              <input type="text" id="gToHex" value="#a855f7" maxlength="7">
+            </div>
+          </div>
+          <div class="grad-col">
+            <label>Style</label>
+            <select id="gStyle" class="text-input">
+              <option value="linear">Linear</option>
+              <option value="bounce">Bounce (out and back)</option>
+              <option value="reverse">Reverse</option>
+            </select>
+          </div>
+        </div>
+        <input type="text" id="gradText" class="text-input" value="FUSION TAG" placeholder="Text to gradient...">
+        <div class="card-head" style="margin-top:14px;"><span class="card-title accent">PREVIEW</span></div>
+        <div class="preview-box" id="gradPreview"></div>
+        <div class="card-head" style="margin-top:14px;"><span class="card-title">GENERATED TAGS</span></div>
+        <textarea id="gradOutput" class="motd-textarea small" readonly spellcheck="false"></textarea>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="gradInsertBtn">Insert Into Editor</button>
+          <button class="btn" id="gradCopyBtn">Copy Tags</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- CREDITS -->
+    <section class="panel" id="panel-credits">
+      <div class="card">
+        <div class="card-head"><span class="card-title">CREDITS LIST</span></div>
+        <div id="creditsList" class="credits-list"></div>
+        <div class="btn-row">
+          <input type="text" id="creditName" class="text-input" placeholder="Name" style="max-width:220px;">
+          <input type="text" id="creditRole" class="text-input" placeholder="Role" style="max-width:220px;">
+          <button class="btn btn-primary" id="addCreditBtn">Add Credit</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title accent">CREDITS PREVIEW</span></div>
+        <div class="preview-box" id="creditsPreview"></div>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="creditsInsertBtn">Insert Into Editor</button>
+          <button class="btn" id="creditsCopyBtn">Copy Text</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- JSON EDITOR -->
+    <section class="panel" id="panel-json">
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">RAW STATE (JSON)</span>
+          <span class="pill" id="jsonStatus">SYNCED</span>
+        </div>
+        <textarea id="jsonEditor" class="motd-textarea mono-lg" spellcheck="false"></textarea>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="jsonApplyBtn">Apply</button>
+          <button class="btn" id="jsonReloadBtn">Reload From State</button>
+          <button class="btn" id="jsonCopyBtn">Copy</button>
+        </div>
+        <p class="hint" id="jsonError"></p>
+      </div>
+    </section>
+
+    <!-- MULTI-LINE -->
+    <section class="panel" id="panel-multiline">
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">MULTI-LINE MOTD SET</span>
+          <button class="btn btn-accent" id="addLineBtn">+ Add Line</button>
+        </div>
+        <div id="linesList" class="lines-list"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title accent">COMBINED PREVIEW</span></div>
+        <div class="preview-box multiline" id="linesPreview"></div>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="linesInsertBtn">Load Into Editor</button>
+          <button class="btn" id="linesCopyBtn">Copy All</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- HISTORY -->
+    <section class="panel" id="panel-history">
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">SAVED HISTORY</span>
+          <button class="btn" id="clearHistoryBtn">Clear All</button>
+        </div>
+        <div id="historyList" class="history-list"></div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="panel" id="panel-settings">
+      <div class="card">
+        <div class="card-head"><span class="card-title">APPEARANCE</span></div>
+        <div class="settings-row">
+          <label>Accent color</label>
+          <input type="color" id="accentPicker" value="#22d3ee">
+        </div>
+        <div class="settings-row">
+          <label>Tag format</label>
+          <select id="tagFormat" class="text-input" style="max-width:260px;">
+            <option value="color" selected>&lt;color=#RRGGBB&gt;text&lt;/color&gt;</option>
+            <option value="hashcolor">&lt;color=#RRGGBB&gt;text&lt;/color&gt; (##)</option>
+            <option value="section">&amp;#RRGGBB;text</option>
+          </select>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">DATA</span></div>
+        <div class="btn-row">
+          <button class="btn" id="exportDataBtn">Export All Data</button>
+          <button class="btn" id="wipeDataBtn">Wipe All Data</button>
+        </div>
+        <p class="hint">Everything is stored locally in your browser. Nothing is sent to a server.</p>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="foot">
+    <span>orxify's motd maker</span>
+    <span class="dot">·</span>
+    <span>built for gorilla tag status / room MOTD strings</span>
+  </footer>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
