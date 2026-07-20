@@ -18,12 +18,10 @@
   const defaultState = () => ({
     motd: '',
     credits: [
-      { name: 'Orxify', role: 'Creator' },
-      { name: 'You', role: 'Contributor' }
+      { name: 'UNITY', role: 'Creator' },
     ],
     lines: [
       '<color=#22d3ee>Welcome to the server!</color>',
-      '<color=#a855f7>Type /help for commands</color>'
     ],
     history: [],
     settings: { accent: '#22d3ee', tagFormat: 'color' }
