@@ -7,6 +7,19 @@
     '#ffffff', '#94a3b8', '#06b6d4', '#2563eb', '#d946ef', '#eab308'
   ];
 
+  const PRESET_GRADIENTS = [
+    { name: 'Fusion Blue', from: '#00d4ff', to: '#0040ff' },
+    { name: 'Fire', from: '#ffcc00', to: '#ff0000' },
+    { name: 'Sunset', from: '#ff5f6d', to: '#a855f7' },
+    { name: 'Acid', from: '#d4ff00', to: '#22c55e' },
+    { name: 'Ocean', from: '#38bdf8', to: '#1d4ed8' },
+    { name: 'Lava', from: '#7f1d1d', to: '#ff5500' },
+    { name: 'Neon Pink', from: '#ff00c8', to: '#c400ff' },
+    { name: 'Gold', from: '#ffe066', to: '#ff8c00' }
+  ];
+
+  const LOCKED_CREDIT = { name: 'Unity', role: 'Creator', locked: true };
+
   const TEMPLATES = {
     newline: '\\n',
     boldwrap: null, // handled specially (wraps selection)
@@ -18,25 +31,40 @@
   const defaultState = () => ({
     motd: '',
     credits: [
-      { name: 'UNITY', role: 'Creator' },
+      { ...LOCKED_CREDIT },
+      { name: 'UNITY', role: 'CREATOR' }
     ],
     lines: [
       '<color=#22d3ee>Welcome to the server!</color>',
+      '<color=#a855f7>Type /help for commands</color>'
     ],
     history: [],
+    perWords: [
+      { word: 'WELCOME', from: '#00d4ff', to: '#0040ff' },
+      { word: 'TO', from: '#ff5f6d', to: '#a855f7' },
+      { word: 'SHADOW', from: '#d4ff00', to: '#22c55e' }
+    ],
     settings: { accent: '#22d3ee', tagFormat: 'color' }
   });
+
+  function normalizeCredits(s) {
+    if (!Array.isArray(s.credits)) s.credits = [];
+    // strip any tampered/duplicate copy of the locked entry, then re-pin it at the top
+    s.credits = s.credits.filter(c => c && c.name !== LOCKED_CREDIT.name);
+    s.credits.unshift({ ...LOCKED_CREDIT });
+    return s;
+  }
 
   let state = loadState();
 
   function loadState() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return defaultState();
+      if (!raw) return normalizeCredits(defaultState());
       const parsed = JSON.parse(raw);
-      return Object.assign(defaultState(), parsed);
+      return normalizeCredits(Object.assign(defaultState(), parsed));
     } catch (e) {
-      return defaultState();
+      return normalizeCredits(defaultState());
     }
   }
 
@@ -270,10 +298,12 @@
     const gText = document.getElementById('gradText');
     const gPreview = document.getElementById('gradPreview');
     const gOutput = document.getElementById('gradOutput');
+    const gBar = document.getElementById('gradientBar');
 
     function recalc() {
       if (isValidHex(gFrom.value)) gFromSw.value = gFrom.value;
       if (isValidHex(gTo.value)) gToSw.value = gTo.value;
+      gBar.style.background = `linear-gradient(to right, ${gFromSw.value}, ${gToSw.value})`;
       const tags = buildGradientTags(gText.value || '', gFromSw.value, gToSw.value, gStyle.value);
       gOutput.value = tags;
       gPreview.innerHTML = renderPreview(tags) || '<span style="color:var(--text-faint)">...</span>';
@@ -289,10 +319,94 @@
     document.getElementById('gradInsertBtn').addEventListener('click', () => {
       insertAtCursor(motdInput, () => gOutput.value);
       onMotdChange();
+      document.querySelector('.tab[data-tab="editor"]').click();
     });
     document.getElementById('gradCopyBtn').addEventListener('click', () => copyText(gOutput.value));
 
+    // presets
+    const presetList = document.getElementById('presetList');
+    PRESET_GRADIENTS.forEach(p => {
+      const row = document.createElement('div');
+      row.className = 'preset-row';
+      const sw = document.createElement('div');
+      sw.className = 'preset-swatch';
+      sw.style.background = `linear-gradient(to right, ${p.from}, ${p.to})`;
+      const name = document.createElement('span');
+      name.className = 'preset-name';
+      name.textContent = p.name;
+      const useBtn = document.createElement('button');
+      useBtn.className = 'btn';
+      useBtn.textContent = 'Use';
+      useBtn.addEventListener('click', () => {
+        gFrom.value = p.from; gTo.value = p.to;
+        gFromSw.value = p.from; gToSw.value = p.to;
+        recalc();
+      });
+      row.appendChild(sw); row.appendChild(name); row.appendChild(useBtn);
+      presetList.appendChild(row);
+    });
+
     recalc();
+    initPerWordGradient();
+  }
+
+  // ---------- per-word gradient ----------
+  function renderPerWord() {
+    const list = document.getElementById('perWordList');
+    list.innerHTML = '';
+    state.perWords.forEach((w, i) => {
+      const row = document.createElement('div');
+      row.className = 'perword-row';
+
+      const wordInput = document.createElement('input');
+      wordInput.type = 'text'; wordInput.className = 'word-input'; wordInput.value = w.word;
+      wordInput.placeholder = 'word';
+      wordInput.addEventListener('input', () => { w.word = wordInput.value; saveState(); renderPerWordPreview(); });
+
+      const fromColor = document.createElement('input');
+      fromColor.type = 'color'; fromColor.value = w.from;
+      fromColor.addEventListener('input', () => { w.from = fromColor.value; saveState(); renderPerWordPreview(); });
+
+      const toColor = document.createElement('input');
+      toColor.type = 'color'; toColor.value = w.to;
+      toColor.addEventListener('input', () => { w.to = toColor.value; saveState(); renderPerWordPreview(); });
+
+      const del = document.createElement('button');
+      del.textContent = 'Remove';
+      del.addEventListener('click', () => { state.perWords.splice(i, 1); saveState(); renderPerWord(); });
+
+      row.appendChild(wordInput); row.appendChild(fromColor); row.appendChild(toColor); row.appendChild(del);
+      list.appendChild(row);
+    });
+    renderPerWordPreview();
+  }
+
+  function buildPerWordTags() {
+    return state.perWords
+      .map(w => buildGradientTags(w.word || '', w.from, w.to, 'linear'))
+      .join(' ');
+  }
+
+  function renderPerWordPreview() {
+    const tags = buildPerWordTags();
+    document.getElementById('perWordPreview').innerHTML =
+      renderPreview(tags) || '<span style="color:var(--text-faint)">Add words above...</span>';
+  }
+
+  function initPerWordGradient() {
+    document.getElementById('addWordBtn').addEventListener('click', () => {
+      const preset = PRESET_GRADIENTS[state.perWords.length % PRESET_GRADIENTS.length];
+      state.perWords.push({ word: '', from: preset.from, to: preset.to });
+      saveState();
+      renderPerWord();
+    });
+    document.getElementById('perWordCopyBtn').addEventListener('click', () => copyText(buildPerWordTags()));
+    document.getElementById('perWordInsertBtn').addEventListener('click', () => {
+      insertAtCursor(motdInput, () => buildPerWordTags());
+      onMotdChange();
+      document.querySelector('.tab[data-tab="editor"]').click();
+    });
+    renderPerWord();
   }
 
   // ---------- credits tab ----------
@@ -306,14 +420,21 @@
       const row = document.createElement('div');
       row.className = 'credit-row';
       row.innerHTML = `<span><span class="who">${escapeHtml(c.name)}</span><span class="role">${escapeHtml(c.role)}</span></span>`;
-      const del = document.createElement('button');
-      del.textContent = 'Remove';
-      del.addEventListener('click', () => {
-        state.credits.splice(i, 1);
-        saveState();
-        renderCredits();
-      });
-      row.appendChild(del);
+      if (c.locked) {
+        const lock = document.createElement('span');
+        lock.className = 'pill';
+        lock.textContent = 'LOCKED';
+        row.appendChild(lock);
+      } else {
+        const del = document.createElement('button');
+        del.textContent = 'Remove';
+        del.addEventListener('click', () => {
+          state.credits.splice(i, 1);
+          saveState();
+          renderCredits();
+        });
+        row.appendChild(del);
+      }
       list.appendChild(row);
     });
 
@@ -359,7 +480,7 @@
       const errEl = document.getElementById('jsonError');
       try {
         const parsed = JSON.parse(document.getElementById('jsonEditor').value);
-        state = Object.assign(defaultState(), parsed);
+        state = normalizeCredits(Object.assign(defaultState(), parsed));
         saveState();
         rerenderAll();
         errEl.textContent = '';
@@ -525,6 +646,7 @@
     renderCredits();
     renderLines();
     renderHistory();
+    renderPerWord();
     syncJsonEditor();
     document.getElementById('accentPicker').value = state.settings.accent;
     applyAccent(state.settings.accent);
