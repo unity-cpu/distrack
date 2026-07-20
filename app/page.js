@@ -1,75 +1,75 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { upload } from "@vercel/blob/client";
 import "./globals.css";
-
-const STORAGE_KEY = "gallery-items-v1";
-
-function loadItems() {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveItems(items) {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-}
-
-function fileToDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
 
 export default function Page() {
   const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [pendingFile, setPendingFile] = useState(null);
   const [pendingDesc, setPendingDesc] = useState("");
   const [dragActive, setDragActive] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editingDesc, setEditingDesc] = useState("");
-  const [loaded, setLoaded] = useState(false);
   const fileInputRef = useRef(null);
-  const importInputRef = useRef(null);
 
   useEffect(() => {
-    setItems(loadItems());
-    setLoaded(true);
+    refresh();
   }, []);
 
-  useEffect(() => {
-    if (loaded) saveItems(items);
-  }, [items, loaded]);
+  async function refresh() {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/items");
+      const data = await res.json();
+      setItems(Array.isArray(data) ? data : []);
+    } finally {
+      setLoading(false);
+    }
+  }
 
-  async function handleFile(file) {
+  function handleFile(file) {
     if (!file || !file.type.startsWith("image/")) return;
-    const dataUrl = await fileToDataUrl(file);
-    setPendingFile({ name: file.name, dataUrl });
+    setPendingFile(file);
   }
 
-  function addItem() {
-    if (!pendingFile) return;
-    const item = {
-      id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
-      src: pendingFile.dataUrl,
-      desc: pendingDesc.trim(),
-      addedAt: Date.now(),
-    };
-    setItems((prev) => [item, ...prev]);
-    setPendingFile(null);
-    setPendingDesc("");
-    if (fileInputRef.current) fileInputRef.current.value = "";
+  async function addItem() {
+    if (!pendingFile || uploading) return;
+    setUploading(true);
+    try {
+      const pathname = `images/${Date.now()}-${pendingFile.name}`;
+      const blob = await upload(pathname, pendingFile, {
+        access: "public",
+        handleUploadUrl: "/api/upload",
+      });
+
+      await fetch("/api/items", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url: blob.url,
+          pathname: blob.pathname,
+          desc: pendingDesc,
+          name: pendingFile.name,
+        }),
+      });
+
+      setPendingFile(null);
+      setPendingDesc("");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      await refresh();
+    } catch (err) {
+      alert("Upload failed: " + err.message);
+    } finally {
+      setUploading(false);
+    }
   }
 
-  function removeItem(id) {
+  async function removeItem(id) {
     setItems((prev) => prev.filter((i) => i.id !== id));
+    await fetch(`/api/items/${id}`, { method: "DELETE" });
   }
 
   function startEdit(item) {
@@ -77,43 +77,24 @@ export default function Page() {
     setEditingDesc(item.desc);
   }
 
-  function saveEdit(id) {
-    setItems((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, desc: editingDesc.trim() } : i))
-    );
+  async function saveEdit(id) {
+    const res = await fetch(`/api/items/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ desc: editingDesc }),
+    });
+    const updated = await res.json();
+    setItems((prev) => prev.map((i) => (i.id === id ? updated : i)));
     setEditingId(null);
     setEditingDesc("");
-  }
-
-  function exportBackup() {
-    const blob = new Blob([JSON.stringify(items, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "gallery-backup.json";
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  async function importBackup(file) {
-    if (!file) return;
-    const text = await file.text();
-    try {
-      const parsed = JSON.parse(text);
-      if (Array.isArray(parsed)) {
-        setItems(parsed);
-      }
-    } catch {
-      alert("Couldn't read that file — expected a gallery-backup.json");
-    }
   }
 
   return (
     <div className="wrap">
       <h1 className="title">gallery</h1>
-      <p className="subtitle">drop pics, write descriptions, they stay on this device</p>
+      <p className="subtitle">
+        drop a pic, write a description — visible to anyone who visits this site
+      </p>
 
       <div className="panel">
         <div className="panel-label">add image</div>
@@ -152,36 +133,25 @@ export default function Page() {
             value={pendingDesc}
             onChange={(e) => setPendingDesc(e.target.value)}
           />
-          <button className="btn" onClick={addItem} disabled={!pendingFile}>
-            add to gallery
+          <button className="btn" onClick={addItem} disabled={!pendingFile || uploading}>
+            {uploading ? "uploading..." : "add to gallery"}
           </button>
         </div>
       </div>
 
       <div className="toolbar">
-        <button className="btn ghost" onClick={exportBackup}>
-          export backup
-        </button>
-        <button className="btn ghost" onClick={() => importInputRef.current?.click()}>
-          import backup
-        </button>
-        <input
-          ref={importInputRef}
-          type="file"
-          accept="application/json"
-          style={{ display: "none" }}
-          onChange={(e) => importBackup(e.target.files?.[0])}
-        />
-        <span className="count">{items.length} item{items.length === 1 ? "" : "s"}</span>
+        <span className="count">
+          {loading ? "loading..." : `${items.length} item${items.length === 1 ? "" : "s"}`}
+        </span>
       </div>
 
-      {items.length === 0 ? (
+      {!loading && items.length === 0 ? (
         <div className="empty-state">nothing here yet — add your first image above</div>
       ) : (
         <div className="grid">
           {items.map((item) => (
             <div className="card" key={item.id}>
-              <img src={item.src} alt={item.desc || "gallery image"} />
+              <img src={item.url} alt={item.desc || "gallery image"} loading="lazy" />
               <div className="card-body">
                 {editingId === item.id ? (
                   <textarea
